@@ -2,12 +2,27 @@
 
 ## Requirements
 
-* packer >= `1.2.5`. Do not use packer 1.3.0/1.3.1 - [https://github.com/hashicorp/packer/issues/6733](https://github.com/hashicorp/packer/issues/6733)
-* Microsoft Hyper-V Server 2016/Microsoft Windows Server 2016
+* packer <=`1.4.1`. Do not use packer below 1.4.0. For previous packer versions use previous releases from this repository
+* [OPTIONAL] Vagrant >= `2.2.3`
+* Microsoft Hyper-V Server 2016/2019 or Microsoft Windows Server 2016/2019 (not 2012/R2)
 
 ## Usage
 
-To adjust to your Hyper-V, please check variables below:
+### Install packer from Chocolatey
+
+```cmd
+choco install packer --version=1.4.1
+```
+
+### Add firewal exclusions for TCP ports 8000-9000 (default range)
+
+```powershell
+Remove-NetFirewallRule -DisplayName "Packer_http_server" -Verbose
+New-NetFirewallRule -DisplayName "Packer_http_server" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 8000-9000
+
+```
+
+### To adjust to your Hyper-V, please check variables below:
 
 * proper VLAN (possible passing as variable `-var 'vlan_id=0'` )
 * proper Hyper-V Virtual Switch name (access to Internet will be required) (possible passing as variable `-var 'switch_name=vSwitch'` )
@@ -17,24 +32,37 @@ To adjust to your Hyper-V, please check variables below:
 
 ### Scripts
 
-* `validate_all.sh` - validates all tasks
+* `validate_all.sh` - validates all templates.
 
 ### Windows Machines
 
 * all available updates will be applied (3 passes)
-* latest chocolatey and packages will be installed:
-  * `puppet-agent`
-  * `conemu`
-  * `dotnet4.7.2`
-  * `sysinternals`
+* latest version of chocolatey
+* packages from a list below:
 
-* puppet agent settings will be customized (server=foreman.spcph.local). Please adjust it to your needs.
+  |Package|Version|
+  |-------|-------|
+  |puppet-agent|5.5.12|
+  |conemu|latest|
+  |dotnet4.7.2|latest|
+  |sysinternals|latest|
+* latest Nuget poweshell module
+* puppet agent settings will be customized (`server=foreman.spcph.local`). Please adjust it (`/extra/scripts/phase-3.ps1`) to suit your needs. Puppet won't be running after generalize phase
 
 ### Linux Machines
 
+* Repositories:
+  * EPEL 7
+  * Zabbix 4.x
+  * Puppet 5.x
+  * Webmin
+  * Neofetch
+* latest System Center Virtual Machine Agent available (with versioning, so you always can go back)
+
+#### Info
+
 * adjust `/files/provision.sh` to modify package's versions/servers
-* `neofetch` as default banner during after the login - change required fields in `provision.sh`
-* latest System Center Virtual Machine Agent available
+* `neofetch` packageas default banner during after the login - change required fields you'd like to see in `provision.sh`
 
 ## Templates Windows 2016
 
@@ -42,25 +70,73 @@ To adjust to your Hyper-V, please check variables below:
 
 Run `hv_win2016_g2.cmd` (Windows)
 
-#### Generation 2 Prerequisites
+#### 2016 Standard Generation 2 Prerequisites
 
 For Generation 2 prepare `secondary.iso` with folder structure:
 
 * ./extra/files/gen2-2016/Autounattend.xml     => /Autounattend.xml
 * ./extra/scripts/hyper-v/bootstrap.ps1        => /bootstrap.ps1
 
+This template uses this image name in Autounattendes.xml. If youre using different ISO you'll have to adjust that part in proper file and rebuild `secondary.iso` image.
+
+```xml
+<InstallFrom>
+    <MetaData wcm:action="add">
+        <Key>/IMAGE/NAME </Key>
+        <Value>Windows Server 2016 SERVERSTANDARD</Value>
+    </MetaData>
+</InstallFrom>
+```
+
 Run `hv_win2016_g2.cmd` (Windows)
 
-### Hyper-V Generation 2 Windows Server 1709 Standard Image
+### Hyper-V Generation 2 Windows Server 2019 Standard Image
 
-#### 1709 Generation 2 Prerequisites
+Run `hv_win2019_std_g2.cmd` (Windows)
 
-For Generation 2 prepare `secondary1709.iso` with folder structure:
+#### 2019 Standard Generation 2 Prerequisites
 
-* ./extra/files/gen2-1709/Autounattend.xml     => /Autounattend.xml
-* ./extra/scripts/hyper-v/bootstrap.ps1        => /bootstrap.ps1
+For Generation 2 prepare `secondary.iso` with folder structure:
 
-Run `hv_win2016_1709_g2.cmd` (Windows)
+* ./extra/files/gen2-2019/std/Autounattend.xml     => /Autounattend.xml
+* ./extra/scripts/hyper-v/bootstrap.ps1            => /bootstrap.ps1
+
+This template uses this image name in Autounattendes.xml. If youre using different ISO you'll have to adjust that part in proper file and rebuild `secondary.iso` image.
+
+```xml
+<InstallFrom>
+    <MetaData wcm:action="add">
+        <Key>/IMAGE/NAME </Key>
+        <Value>Windows Server 2019 SERVERSTANDARD</Value>
+    </MetaData>
+</InstallFrom>
+```
+
+Run `hv_win2019_std_g2.cmd` (Windows)
+
+### Hyper-V Generation 2 Windows Server 2019 Datacenter Image
+
+Run `hv_win2019_std_g2.cmd` (Windows)
+
+#### 2019 Datacenter Generation 2 Prerequisites
+
+For Generation 2 prepare `secondary.iso` with folder structure:
+
+* ./extra/files/gen2-2019/dc/Autounattend.xml     => /Autounattend.xml
+* ./extra/scripts/hyper-v/bootstrap.ps1            => /bootstrap.ps1
+
+This template uses this image name in Autounattendes.xml. If youre using different ISO you'll have to adjust that part in proper file and rebuild `secondary.iso` image.
+
+```xml
+<InstallFrom>
+    <MetaData wcm:action="add">
+        <Key>/IMAGE/NAME </Key>
+        <Value>Windows Server 2019 SERVERDATACENTER</Value>
+    </MetaData>
+</InstallFrom>
+```
+
+Run `hv_win2019_dc_g2.cmd` (Windows)
 
 ### Hyper-V Generation 2 Windows Server 1803 Standard Image
 
@@ -73,114 +149,100 @@ For Generation 2 prepare `secondary1803.iso` with folder structure:
 
 Run `hv_win2016_1803_g2.cmd` (Windows)
 
+### Hyper-V Generation 2 Windows Server 1809 Standard Image
+
+#### 1809 Generation 2 Prerequisites
+
+For Generation 2 prepare `secondary1809.iso` with folder structure:
+
+* ./extra/files/gen2-1809/Autounattend.xml     => /Autounattend.xml
+* ./extra/scripts/hyper-v/bootstrap.ps1        => /bootstrap.ps1
+
+Run `hv_win2016_1809_g2.cmd` (Windows)
+
 ## Templates CentOS 7.x
 
-### Hyper-V Generation 2 CentOS 7.5 Image
+### Hyper-V Generation 2 CentOS 7.6 Image
 
-Run `hv_centos75_g2.cmd` (Windows)
+Run `hv_centos76_g2.cmd` (Windows)
 
-### Warnings
+### Warnings - CentOS
 
 * if required change `switch_name` parameter to switch's name you're using. In most situations packer manages it fine but there were a cases when it created new 'internal' switches without access to Internet. By design this setup will fail to download and apply updates.
 * folder `./iso` should contain iso image of your Windows 2016 Server Standard (any version will be fine)
 * if needed - change `iso_url` variable to a proper iso name
-* packer generates v8 machine configuration files (Windows 2016/Hyper-V 2016 as host)
+* packer generates v8 machine configuration files (Windows 2016/Hyper-V 2016 as host) and v9 for Windows Server 2019/Windows 10 1809
 * credentials for Windows machines: Administrator/password (removed after sysprep)
 * credentials for Linux machines: root/password
 * for Windows based machines adjust your settings in ./scripts/phase-2.ps1
 * for Linux based machines adjust your settings in ./files/gen2-centos/provision.sh and ./files/gen2-centos/puppet.conf
 
-## Changelog
+### Vagrant support
 
-### Version 1.0.5 2018-10-03
+Experimental support for vagrant machines `vagrant_hv_centos76_g2.cmd`
 
-* updated `extra`
-* tested with packer 1.3.0/1.3.1/1.3.2-dev
-* [CentOS] removed `hv_centos74_g2`
-* [Windows] added support for `Windows Server 1803 Edition (Standard)`
-* [Windows] workarounded [https://github.com/hashicorp/packer/issues/6733](https://github.com/hashicorp/packer/issues/6733) by using `pause_before` and `restart_check_command`
-* [Windows] removed `hv_win2016_g1`
+### Hyper-V Generation 2 CentOS 7.6 Image with extra docker volume
 
-### Version 1.0.4 2018-05-21
+Run `hv_centos76_g2_docker.cmd` (Windows)
 
-* fixed some inconsistency in `extra` scripts when creating registry entries
-* [Windows] fixed `boostrap.ps1` for Windows based machines (inproper output for network list)
-* [CentOS] fixes in CentOS `'provision.sh` to include proper config for neofetch
-* [CentOS] switch to `neofetch`, reworked motd.sh to use neofetch with config (instead of defaults)
-* [CentOS] added `screen` as essential package for CentOS
-* added `azure-placeholder.sh` for Azure-related CentOS machines
-* switched to packer 1.2.3
-* added `disk_block_size` with 1 MiB for Linux/CentOS machines
+### Warnings - CentOS Docker
 
-### Version 1.0.3 2018-02-23
-
-* `BREAKING FEATURE` - preparing switching to submodules/subtree for ./scripts and ./files - to share common code with other providers
-* tree structure in `./scripts` and `./files`, moved to `./extras`
-* [Windows] adding `phase-3.ps1` script to put less generic stuff there. Just uncomment line with `exit` to get rid of it
-* [Windows] added support for `Windows Server 1709 Edition (Standard)`
-* [Windows] remove some clutter from `bootstrap.ps1`
-* [Windows] added `exit 0` for most of the scripts as some external commands were leaving packer with non-zero exit codes
-* [CentOS] added `zeroing.sh` script to make compacting more efficient
-* [CentOS] reworked bug with UEFI - this time after deploying from image you can run sscript `/usr/local/bin/uefi.sh` which will recheck and readd CentOS UEFI entries. For SCVMM deployments (which separates vhdx from vmcx) use `RunOnce`
-* [CentOS] removed clutter from `provision.sh`
-* [CentOS] removed screenfetch, replaced with neofetch
-* [CentOS] reworked `motd.sh` in `/etc/profile.d` to reflect .Xauthority existence
-
-### Version 1.0.2 2017-12-17
-
-* workaround for PS module `PSWindowsUpdate` in Windows Templates
-* added `nmon`, `jq` and `sssd-libwebclient` to CentOS 7.4 template
-* added `temp_path` in templates to point creation of VMs to current script's folder
-* tested with packer 1.1.3
-* added variable `vlan_id`
-* added variable `switch_name`
-* resized OS images to 70GB (Windows)
-* sector-size change in  PS cleaning script (from 64k to 4MB - double the speed)
-
-### Version 1.0.1
-
-* documentation fixes
-
-### Version 1.0.0
-
-* initial release for github
-
-### prerelease versions
-
-* serious bug with UEFI partitioning in CentOS 7.x generation 2 - `Unable to find \EFI\BOOT\grubx64.efi` [https://blogs.msdn.microsoft.com/virtual_pc_guy/2015/02/11/copying-the-vhd-of-a-generation-2-linux-vmand-not-booting-afterwards/](https://blogs.msdn.microsoft.com/virtual_pc_guy/2015/02/11/copying-the-vhd-of-a-generation-2-linux-vmand-not-booting-afterwards/)
-* disabled libvirtd in CentOS 7.4 template
-* added support for SystemCenter VMM Linux Agent for CentOS Gen 2 machines - it's required in case of per-template deployment
-* changed firewalld default configuration
-  * default zone set from `public` to `work`
-  * default set of rules for zone 'work'
-  * assigning interface `eth0` to zone `work`
-  * remove excessive logging for
-* changed `/etc/profile.d/motd.sh` to adjust missing XAUTHORITY variable
-* made files more generic, removed company's related terms
-* added adcli and krb5-workstation packages for CentOS 7.x image
-* added CentOS 7.4 Gen 2 template `hv_centos74_g2`
-* removed `vlan_id` and `switch_name` settings - revert to default ones for repository to be more generic.
-* fixed cmd scripts with Windows current catalog syntax.
-* added CentOS 7.4 Gen 2 template `hv_centos74_g2`
-* removed `vlan_id` and `switch_name` settings - revert to default ones for repository to be more generic.
-* fixed cmd scripts with Windows current catalog syntax.
-* added `cmd` scripts for Windows deployment
-* initial build
+* if required change `switch_name` parameter to switch's name you're using. In most situations packer manages it fine but there were a cases when it created new 'internal' switches without access to Internet. By design this setup will fail to download and apply updates.
+* folder `./iso` should contain iso image of your Windows 2016 Server Standard (any version will be fine)
+* if needed - change `iso_url` variable to a proper iso name
+* packer generates v8 machine configuration files (Windows 2016/Hyper-V 2016 as host) and v9 for Windows Server 2019/Windows 10 1809
+* credentials for Windows machines: Administrator/password (removed after sysprep)
+* credentials for Linux machines: root/password
+* for Windows based machines adjust your settings in ./scripts/phase-2.ps1
+* for Linux based machines adjust your settings in ./files/gen2-centos/provision.sh and ./files/gen2-centos/puppet.conf
+* no `docker` repo will be added  and no docker-related packages will be installed
 
 ## Known issues
 
 ### Infamous UEFI/Secure boot WIndows implementation
 
-During the deployment secure keys are store in *.vmcx file and are separated from *.vhdx file. To countermeasure it - there is added extre step (manual) in a form of `/usr/local/bin/uefi.sh` script that will check for existence of CentOS folder in EFI and will add extra entry in UEFI.
-In manual setup you can run it as a part of deploy. In SCVMM deployment I'd recommend using `RunOnce` feature.
+During the deployment secure keys are stored in *.vmcx file and are separated from *.vhdx file. To countermeasure it - there is added extra step in a form of (`/usr/local/bin/uefi.sh`) script that will check for existence of CentOS folder in EFI and will add extra entry in UEFI.
+In manual setup you can run it as a part of your deploy. In SCVMM deployment I'd recommend using `RunOnce` feature.
+
+### On Windows Server 2019/Windows 10 1809 image boots to fast for packer to react.
+
+[https://github.com/hashicorp/packer/issues/7278#issuecomment-468492880](https://github.com/hashicorp/packer/issues/7278#issuecomment-468492880)
+
+No fixes yes.
 
 ### When Hyper-V host has more than one interface Packer sets {{ .HTTPIP }} variable to inproper interface
 
-No resolution so far, template needs to be changed to pass real IP address, or there should be connection between these addresses. Limiting those ends with timeout errors.
+No resolution so far, template needs to be changed to pass real IP address, or there should be connection between these addresses. Limiting these, end with timeout errors.
 
 ### Packer version 1.3.0/1.3.1 have bug with `windows-restart` provisioner
 
 [https://github.com/hashicorp/packer/issues/6733](https://github.com/hashicorp/packer/issues/6733)
+
+### Packer won't run until VirtualSwitch is created as shared
+
+[https://github.com/hashicorp/packer/issues/5023](https://github.com/hashicorp/packer/issues/5023)
+Will be fixed in 1.4.x revision
+
+### I have problem how to find a proper WIM  name in Windows ISO to pick proper version.
+
+You can use number. If you have 4 images on the list of choice - use `ImageIndex` with proper `Value`
+
+```xml
+<ImageInstall>
+    <OSImage>
+        <InstallFrom>
+            <MetaData wcm:action="add">
+                <Key>/IMAGE/INDEX </Key>
+                <Value>2</Value>
+            </MetaData>
+        </InstallFrom>
+        <InstallTo>
+            <DiskID>0</DiskID>
+            <PartitionID>2</PartitionID>
+        </InstallTo>
+    </OSImage>
+</ImageInstall>
+```
 
 ## About
 

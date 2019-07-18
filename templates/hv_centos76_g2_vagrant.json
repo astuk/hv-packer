@@ -1,0 +1,158 @@
+{
+  "builders": [
+    {
+      "type": "hyperv-iso",
+      "vm_name": "{{ user `vm_name` }}",
+      "temp_path": ".",
+      "iso_url": "{{ user `iso_url` }}",
+      "iso_checksum_type": "{{user `iso_checksum_type`}}",
+      "iso_checksum": "{{user `iso_checksum`}}",
+      "disk_size": "{{user `disk_size`}}",
+      "disk_block_size": "1",
+      "communicator": "ssh",
+      "ssh_username": "root",
+      "ssh_password": "password",
+      "ssh_timeout" : "4h",
+      "shutdown_timeout": "30m",
+      "shutdown_command": "echo 'password' | sudo -S shutdown -P now",
+      "memory": 4096,
+      "enable_dynamic_memory": "true",
+      "cpus": 4,
+      "generation": 2,
+      "switch_name": "{{user `switch_name`}}",
+      "vlan_id": "{{user `vlan_id`}}",
+      "http_directory": "./extra/files",
+      "boot_wait": "5s",
+      "boot_command": [
+        "c  setparams 'kickstart' <enter> linuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=CentOS\\x207\\x20x\\86_64 inst.ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/gen2-centos/ks.cfg<enter> initrdefi /images/pxeboot/initrd.img<enter> boot<enter>"
+      ],
+      "guest_additions_mode":"disable",
+      "enable_secure_boot": false,
+      "output_directory": "{{ user `output_directory` }}"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "extra/files/gen2-centos/webmin.repo",
+      "destination": "/tmp/webmin.repo"
+    },
+    {
+      "type": "file",
+      "source": "extra/files/gen2-centos/puppet.conf",
+      "destination": "/tmp/puppet.conf"
+    },
+    {
+      "type": "file",
+      "source": "extra/files/gen2-centos/motd.sh",
+      "destination": "/tmp/motd.sh"
+    },
+    {
+      "type": "file",
+      "source": "extra/files/gen2-centos/provision.sh",
+      "destination": "/tmp/provision.sh"
+    },
+    {
+      "type": "file",
+      "source": "extra/files/gen2-centos/prepare_neofetch.sh",
+      "destination": "/tmp/prepare_neofetch.sh"
+    },
+    {
+      "type": "file",
+      "source": "extra/files/gen2-centos/zeroing.sh",
+      "destination": "/tmp/zeroing.sh"
+    },
+    {
+      "type": "file",
+      "source": "extra/files/gen2-centos/vagrant.sh",
+      "destination": "/tmp/vagrant.sh"
+    },
+    {
+      "type": "file",
+      "source": "extra/files/gen2-centos/uefi.sh",
+      "destination": "/usr/local/bin/uefi.sh"
+    },
+    {
+      "type": "file",
+      "source": "extra/files/gen2-centos/scagent/1.0.3.1022/scvmmguestagent.1.0.3.1022.x64.tar",
+      "destination": "/tmp/scvmmguestagent.1.0.3.1022.x64.tar"
+    },
+    {
+      "type": "file",
+      "source": "extra/files/gen2-centos/scagent/1.0.3.1022/install",
+      "destination": "/tmp/install"
+    },
+    {
+      "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'",
+      "inline": [
+      "chmod +x /tmp/install",
+      "cd /tmp",
+      "/tmp/install /tmp/scvmmguestagent.1.0.3.1022.x64.tar"
+      ],
+    "inline_shebang": "/bin/sh -x",
+    "type": "shell"
+    },
+    {
+      "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'",
+      "inline": [
+      "chmod +x /tmp/provision.sh",
+      "/tmp/provision.sh",
+      "reboot"
+      ],
+    "inline_shebang": "/bin/sh -x",
+    "type": "shell",
+    "expect_disconnect": true
+    },
+    {
+      "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'",
+      "inline": [
+      "chmod +x /tmp/prepare_neofetch.sh",
+      "chmod +x /tmp/vagrant.sh",
+      "/tmp/prepare_neofetch.sh",
+      "/tmp/vagrant.sh",
+      "chmod +x /usr/local/bin/uefi.sh"
+      ],
+    "inline_shebang": "/bin/sh -x",
+    "type": "shell"
+    },
+    {
+     "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'",
+      "inline": [
+      "echo Last Phase",
+      "yum -y -e 0 update",
+      "systemctl set-default multi-user.target",
+      "systemctl disable initial-setup-text",
+      "systemctl disable initial-setup-graphical",
+      "systemctl stop initial-setup-text",
+      "systemctl stop initial-setup-graphical",
+      "/bin/rm -f /etc/ssh/*key*",
+      "chmod +x /tmp/zeroing.sh",
+      "/tmp/zeroing.sh",
+      "/bin/rm -rfv /tmp/*"
+    ],
+    "inline_shebang": "/bin/sh -x",
+    "type": "shell",
+    "pause_before": "60s"
+    }
+  ],
+  "post-processors": [
+    {
+      "type": "vagrant",
+      "keep_input_artifact": true,
+      "output": "{{ user `output_vagrant` }}",
+      "vagrantfile_template": "{{ user `vagrantfile_template` }}"
+    }
+  ],
+  "variables": {
+    "iso_url":  "http://mirror-pl.kielcetechnologypark.net/centos/7/isos/x86_64/CentOS-7-x86_64-Everything-1810.iso",
+    "iso_checksum_type": "sha256",
+    "iso_checksum": "918975cdf947e858c9a0c77d6b90a9a56d9977f3a4496a56437f46f46200cf71",
+    "switch_name": "",
+    "vm_name": "packer-centos76-g2",
+    "disk_size": "70000",
+    "vlan_id": "",
+    "output_directory": "output-centos76",
+    "output_vagrant": "./vbox/packer-centos-76-g2.box",
+    "vagrantfile_template": "./vagrant/hv_centos76_g2.template"
+  }
+}

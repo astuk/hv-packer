@@ -6,4 +6,7 @@ packer*
 .DS_Store
 iso/*
 iso*
-
+extra/.snippets/*
+extra/.snippets*
+vbox/*
+*.box

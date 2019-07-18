@@ -120,14 +120,14 @@
     }
   ],
   "variables": {
-    "iso_url": ".\\iso\\SW_DVD9_Win_Server_STD_CORE_2016_64Bit_English_-4_DC_STD_MLF_X21-70526.ISO",
+    "iso_url": ".\\iso\\SW_DVD9_Win_Server_STD_CORE_2019_1809.1_64Bit_English_DC_STD_MLF_X22-02970.ISO",
     "iso_checksum_type": "sha256",
-    "iso_checksum": "47919ce8b4993f531ca1fa3f85941f4a72b47ebaa4d3a321fecf83ca9d17e6b8",
+    "iso_checksum": "47ec5da25b232b2e7a1c10f3ee22b0f0e68eb1ea4d338e9d1d8f9db30a8f789e",
     "switch_name": "",
     "vlan_id": "",
-    "vm_name": "packer-windows2016-g2",
-    "disk_size": "70000",
-    "output_directory": "output-windows-g2",
-    "secondary_iso_image": "./extra/files/gen2-2016/secondary.iso"
+    "vm_name": "packer-windows2019-g2",
+    "disk_size": "80000",
+    "output_directory": "output-windows-2019-g2",
+    "secondary_iso_image": "./extra/files/gen2-2019/std/secondary.iso"
   }
 }
